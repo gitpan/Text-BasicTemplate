@@ -9,7 +9,7 @@ require Exporter;
 require AutoLoader;
 
 use vars qw($VERSION);
-$VERSION = '0.9.6.1';
+$VERSION = '0.9.8';
 
 use Fcntl qw(:flock);
 
@@ -27,7 +27,7 @@ sub new {
 
     $self->{strip_html_comments} = $self->{strip_perl_comments} =
       $self->{strip_c_comments} = $self->{strip_cpp_comments} =
-      $self->{condense_whitespace} = 0;
+      $self->{condense_whitespace} = $self->{strip_lingering_keys} = 0;
     $self->{simple_ssi} = $self->{simple_conditionals} =  1;
     $self->{document_root} = $ENV{DOCUMENT_ROOT} || '.';
     if (ref $cfg[0] eq 'HASH') {
@@ -40,7 +40,7 @@ sub new {
 	$self->{$x} = shift @cfg || 0;
       }
     } else {
-      my ($sc,$cw,$uc,$ssi,$dr,$ec) = @cfg;
+      my ($sc,$cw,$uc,$ssi,$dr,$ec,$slk) = @cfg;
       $self->{strip_html_comments} = $sc if (defined $sc);
       $self->{condense_whitespace} = $cw if (defined $cw);
       $self->{use_cache} = $uc if (defined $uc);
@@ -48,6 +48,7 @@ sub new {
       $self->{document_root} = $dr if (defined $dr);
       $self->{document_root} .= '/' unless $self->{document_root} =~ /\/$/;
       $self->{simple_conditionals} = $ec if defined $ec;
+      $self->{strip_lingering_keys} = $slk if defined $slk;
     }
     $self->{strip_perl_comments} ||= $self->{strip_bash_comments} || 0;
     return $self;
@@ -143,13 +144,15 @@ sub parse_push {
 	push @_,@{$key};
       } elsif (ref $key eq 'SCALAR') {
 	push @_,$$key;
-      } elsif ($key =~ /^([\w\.\_]+)=/) {
+      } elsif ($key =~ /^([\w\.\_]+)=/o) {
 	next if defined $entities{$1};
 	$entities{$1} = substr($key,length($1)+1);
       } elsif ($key !~ /=/) {
 	$entities{$key} = shift;
       }
     }
+    $entities{percent} ||= '%';
+
     if ($self->{simple_ssi}) {
 	$buf =~ s/<!--#include\s+file="?([^"\s]+)"?\s*-->/$self->parse_push($1,\%entities)/mge;
 	$buf =~ s/<!--#include\s+virtual="?([^"\s]+)"?\s*-->/$self->parse_push($self->{document_root}.$1,\%entities)/mge;
@@ -231,10 +234,10 @@ sub parse_push {
     }
 
     while (($key,$val) = each %entities) {
-      $val = $val;
+      $val = &$val if ($self->{eval_subroutine_refs} and ref $val eq 'CODE');
       $buf =~ s/%$key%/$val/mig;
     }
-    $buf =~ s/%[\w\.\_]+%//mgo;
+    $buf =~ s/%[\w\.\_]+%//mgo if $self->{strip_lingering_keys};
     return $buf;
 }
 
@@ -289,13 +292,15 @@ __END__
  use BasicTemplate;
  $bt = new Text::BasicTemplate( [ 0 [,0 [ ,0 [, 0 [, '/dir/path' [, 0 ]]]]]);
  $bt = new Text::BasicTemplate( [ simple_conditionals => { 1 | 0 }, ] 
+                            [ eval_subroutine_refs => { 1 | 0 }, ]
                             [ simple_ssi => { 1 | 0 },
                               document_root => { '/dir/path' }, ]
                             [ condense_whitespace => { 1 | 0 }, ]
                             [ strip_html_comments => { 1 | 0 }, ]
                             [ strip_perl_comments => { 1 | 0 }, ]
                             [ strip_c_comments => { 1 | 0 }, ]
-                            [ strip_cpp_comments => { 1 | 0 } ]
+                            [ strip_cpp_comments => { 1 | 0 }, ]
+                            [ strip_lingering_keys => { 1 | 0 } ]
                            );
  my %bt_config = ( ... );
  $bt = new Text::BasicTemplate([ %bt_config | \%bt_config ]);
@@ -418,10 +423,10 @@ default.  Starting with v0.9.6, the old list-of-booleans argument list is
 deprecated -- the preferred style is a hash or reference to a hash, with keys
 and values as specified below (still mostly true/false).
 
-strip_comments: HTML-style comments will be parsed out.  Useful for
+strip_html_comments: HTML-style comments will be parsed out.  Useful for
 alternating efficiency and debugging.  Default off.
 
-condense_whietspace: Also for HTML; whitespace will be trimmed to one byte
+condense_whitespace: Also for HTML; whitespace will be trimmed to one byte
 between non-whitespace bytes; this is the same thing a web browser would do.
 Useful for efficiency, but tends to generate fairly unreadable code.  Default
 off.
@@ -441,6 +446,20 @@ a potential security hazard.  Default off.
 document_root: directory to be prepended to SSI-style "virtual" #includes.
 If not supplied, $ENV{DOCUMENT_ROOT} will be attempted, then null.
 
+strip_lingering_keys: If true, substitution keys remaining in the
+output after parsing will be stripped; this permits looser coding
+with less attention to necessarily providing all the keys in the
+code that appear in a template, without the unprocessed %key%
+strings remaining in the output.  It also tends to interfere with
+substitutions that look like more keys (e.g. URI escapes,
+templates producing templates), so it is off by default.
+
+eval_subroutine_refs: if true, a key that is a reference to a
+subroutine (ref $value eq 'CODE') will have the return value
+of that subroutine used as the replacement value.  Code
+references will be evaluated once per template.  Not enabled
+per default.
+
 eval_conditionals: if true, B<BasicTemplate> will evaluate conditional keys
 according to its own simple conditional substitution syntax.  This is as
 follows:
@@ -455,7 +474,7 @@ whereas FOO={BAR} will return true if the content of FOO is the same as the
 content of BAR.
 
 B<true replacement> and B<false replacement> can be any string literals not
-containing parentheses; should you need to replace to a paren, use {paren},
+containing percent signs; should you need to replace to a paren, use {percent},
 which will parse to % unless there already exists a key by that name,
 in which case it will be used instead.  There is no limit on the amount of
 data in the replacement blocks, within the general boundaries of perl,
@@ -491,7 +510,7 @@ rather more CPU resources than does the standard key/value substition.
 
 =item B<parse_push(), push()>
 
-  $output = $bt->push([ 'otherdir/otherfile.html' | $buf | \$buf ]
+  $output = $bt->push([ 'otherdir/otherfile.html' | \$buf ]
                  [, "FOO=bar", ...  | %keys | \%keys | \@pairs | \$pair ] );
 
 parse_push is where most of the work gets done, and the function you will
@@ -500,6 +519,7 @@ combination of the following:
 
         %h = ( 'key' => 'value');
         @l = ( 'key' => 'value');
+        sub s { 'value' }
         $s = 'key=value';
 
         hash pairs:       $bt->parse_push($file,'key' => 'value');      
@@ -510,14 +530,46 @@ combination of the following:
         scalar pairs:     $bt->parse_push($file,"key","value");
         list:             $bt->parse_push($file,@l);
         array reference:  $bt->parse_push($file,\@l);
+        subroutine reference:
+                          $bt->parse_push($file,'key' => \&s);
+        anonymous subroutine reference:
+                          $bd->parse_push($file, 'key' => sub { 'value' });        
 
 The original scalar arguments ("key=value") are now deprecated -- the
 preferred method (for speed and memory usage) is with a hash reference,
 though all approaches are acceptable.
 
+The first argument indicates the buffer to be parsed; this may be a filename
+or a scalar reference; if the latter, it will be interpreted as the buffer
+itself and be parsed.
+
 push() is a shorthand for parse_push.
 
 =head1 REVISIONS
+
+0.9.8: Added subroutine-reference parsing.  This makes it possible to
+bind keys to subroutines which will be called (once per template)
+when needed; this can make things quicker if the template's specific
+informational requirements may not be easily predicted in advance.
+
+0.9.7: Made stripping of lingering keys optional (default off); it
+was causing problems with URI-encoded substitutions, and in
+retrospect probably wasn't a good idea anyway.  Thanks to Ian Baker
+<ian@sonic.net> for the bug report.
+
+0.9.6.1: Fixed stupid idiotic bug caused by overzealous optimization (some
+things were not meant to be done with references -- setting cache scalars,
+f'rinstance).  Renamed from ParsePrint to BasicTemplate for submission to
+CPAN.  Fixed oversight wherein files inserted via simple_ssi #includes were
+having keys stripped, but not parsed first.
+
+First fully public release.  Hooray...
+
+0.9.6: Rewrote argument handling in constructor the same way;
+deprecated old style arg passage.
+
+0.9.5: Rewrote argument handling in parse_push to handle arbitrary
+combinations of different arg types.
 
 0.9.4.1: Fixed nasty bug that set the lvalue in comparison to
 the name of the entitity lvalue, not the value thereof.
@@ -529,11 +581,6 @@ other such changes.  Approximately doubled output speed to about
 
 0.9.3: First stable, releaseable version.  Much documentation.
 
-0.9.5: Rewrote argument handling in parse_push to handle arbitrary
-combinations of different arg types.
-
-0.9.6: Rewrote argument handling in constructor the same way;
-deprecated old style arg passage.
 
 =head1 AUTHOR
 

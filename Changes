@@ -1,3 +1,13 @@
+0.9.8: Added subroutine-reference parsing.  This makes it possible to
+bind keys to subroutines which will be called (once per template)
+when needed; this can make things quicker if the template's specific
+informational requirements may not be easily predicted in advance.
+
+0.9.7: Made stripping of lingering keys optional (default off); it
+was causing problems with URI-encoded substitutions, and in
+retrospect probably wasn't a good idea anyway.  Thanks to Ian Baker
+<ian@sonic.net> for the bug report.
+
 0.9.6.1: Fixed stupid idiotic bug caused by overzealous optimization (some
 things were not meant to be done with references -- setting cache scalars,
 f'rinstance).  Renamed from ParsePrint to BasicTemplate for submission to

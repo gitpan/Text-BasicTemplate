@@ -6,7 +6,7 @@
 # Change 1..1 below to 1..last_test_to_print .
 # (It may become useful if the test is moved to ./t subdirectory.)
 
-BEGIN { $| = 1; print "1..9\n"; }
+BEGIN { $| = 1; print "1..10\n"; }
 END {print "not ok 1\n" unless $loaded;}
 use Text::BasicTemplate;
 $loaded = 1;
@@ -24,7 +24,7 @@ my $pp;
 my %arg;
 @arg{strip_html_comments,strip_c_comments,strip_cpp_comments,strip_perl_comments} =
  (1,1,1,1);
-@arg{condense_whitespace,use_cache,simple_ssi,eval_conditionals} = (1,1,1,1);
+@arg{condense_whitespace,use_cache,simple_ssi,eval_conditionals,eval_subroutine_refs} = (1,1,1,1,1);
 $arg{document_root} = '.';
 print "not " unless $pp = new Text::BasicTemplate(%arg);
 print "ok 1\n";
@@ -65,8 +65,14 @@ if (open(TESTFILE,">$fn")) {
 }
 print "ok 7\n";
 
-print "not " unless $pp->list_cache;
+my $subref_buffer = '%snaf% %one%';
+print "not " unless $pp->push(\$subref_buffer,
+			      snaf => sub { 'u' },
+			      one => 2) eq 'u 2';
 print "ok 8\n";
 
-print "not " unless $pp->purge_cache;
+print "not " unless $pp->list_cache;
 print "ok 9\n";
+
+print "not " unless $pp->purge_cache;
+print "ok 10\n";
