@@ -1,0 +1,24 @@
+0.9.6.1: Fixed stupid idiotic bug caused by overzealous optimization (some
+things were not meant to be done with references -- setting cache scalars,
+f'rinstance).  Renamed from ParsePrint to BasicTemplate for submission to
+CPAN.  Fixed oversight wherein files inserted via simple_ssi #includes were
+having keys stripped, but not parsed first.
+
+First fully public release.  Hooray...
+
+0.9.6: Rewrote argument handling in constructor the same way;
+deprecated old style arg passage.
+
+0.9.5: Rewrote argument handling in parse_push to handle arbitrary
+combinations of different arg types.
+
+0.9.4.1: Fixed nasty bug that set the lvalue in comparison to
+the name of the entitity lvalue, not the value thereof.
+
+0.9.4: Lots of optimizations.  Inlined eval_conditional(),
+introduced caching of condititionals (parse-once, print repeatedly),
+other such changes.  Approximately doubled output speed to about
+3100 conditionals/sec on my i686-200 Linux box.
+
+0.9.3: First stable, releaseable version.  Much documentation.
+

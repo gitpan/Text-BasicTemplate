@@ -1,0 +1,26 @@
+Text::BasicTemplate v0.9.6.1
+----------------------------
+
+This is a template parsing module for perl5 and higher.  Originally
+written for use with HTML templates, it has proved quite useful for
+many kinds of printable-character file parsing.
+
+Essentially a highly flexible, efficient search-and-replace mechanism,
+it is typically used to parse templates on disk using specified key/value
+pairs, conditional evaluation, etc.  Templates and the locations in
+the templates of substitution keys are cached, so each template will
+be parsed at most once.
+
+Text::BasicTemplate does not eval anything from the templates, and passes
+taint checking accordingly.  It uses references internally wherever
+possible for efficiency, and provides type-flexible arguments to
+the important functions (passage of substitutions by scalar, hash, hashref,
+etc).
+
+Copious documentation and examples provided within.
+
+
+Enjoy.
+  Devin Carraway <aqua@sonic.net>
+  Tue Nov 10 16:21:01 PST 1998
+
