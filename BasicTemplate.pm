@@ -11,7 +11,7 @@ require Exporter;
 require AutoLoader;
 
 use vars qw($VERSION);
-$VERSION = "2.005";
+$VERSION = "2.006";
 
 use Fcntl qw(:DEFAULT :flock);
 
@@ -1797,6 +1797,7 @@ sub load_from_file {
     }
     $self->{use_flock} and flock(TMPL,LOCK_UN);
     close(TMPL);
+    $buf .= substr($^X,0,0); # deliberately taint the contents
     $self->{use_file_cache} and $self->{file_cache}{$fn} = \$buf;
     \$buf;
 }
@@ -1827,11 +1828,11 @@ sub bt_include {
 	}
 	if ($self->is_tainted($file) &&
 	    !$self->{bt_include_allow_tainted}) {
-	    return "[bt_include: filename $file is tainted, can't include]";
+	    return "[bt_include: semisecure filename $file is tainted, can't include]";
 	}
-	-e $file or return "[bt_include: file $file does not exist]";
-	-f _ or return "[bt_include: file $file is not a regular file]";
-	-r _ or return "[bt_include: file $file not readable]";
+	-e $file or return "[bt_include: semisecure file $file does not exist]";
+	-f _ or return "[bt_include: semisecure file $file is not a regular file]";
+	-r _ or return "[bt_include: semisecure file $file not readable]";
 	$parse and return $self->parse($file,$ovr);
 	$buf = $self->load_from_file($file);
 	print STDERR "[buf=$buf for file=$file]";
@@ -1842,13 +1843,13 @@ sub bt_include {
 	}
 	if ($self->is_tainted($file) &&
 	    !$self->{bt_include_allow_tainted}) {
-	    return "[bt_include: filename $file is tainted, can't include]";
+	    return "[bt_include: virtual filename $file is tainted, can't include]";
 	}
 	$file = ($self->{include_document_root} || $ENV{DOCUMENT_ROOT}) .
 	  '/' . $file;
- 	-e $file or return "[bt_include: file $file does not exist]";
-	-f _ or return "[bt_include: file $file is not a regular file]";
-	-r _ or return "[bt_include: file $file not readable]";
+ 	-e $file or return "[bt_include: virtual file $file does not exist]";
+	-f _ or return "[bt_include: virtual file $file is not a regular file]";
+	-r _ or return "[bt_include: virtual file $file not readable]";
 	$parse and return $self->parse($file,$ovr);
 	$buf = $self->load_from_file($file);
 	return ((ref $buf eq 'SCALAR') ? $$buf : "[bt_include: load_from_file returned nothing]");
