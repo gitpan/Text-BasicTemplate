@@ -39,11 +39,16 @@ my @templates = (
 		 [ '%if 0%err%elsif 0%err%elsif 0%err%else%not zero%', 'not zero' ],
 		 [ '%if 1% foo %five% bar %fi%', ' foo 5 bar ' ],
 		 [ '%if 1==0%foo %five% bar%fi%', '' ],
+		 [ '%if zero eq "+0"%eq+0%fi%', '' ],
+		 [ '%if zero eq "-0"%eq-0%fi%', '' ],
+		 [ '%if (pluszero eq "+0")%eq+0%fi%', 'eq+0' ],
+		 [ '%if (minuszero eq "-0")%eq-0%fi%', 'eq-0' ],
+		 [ "%if (nonexistent eq '+0')%eq+0%fi%", '' ],
 		);
 
 
 BEGIN {
-    $| = 1; print "1..33\n";
+    $| = 1; print "1..38\n";
 }
 END {print "not ok 1\n" unless $loaded;}
 use Text::BasicTemplate;
@@ -59,6 +64,9 @@ print "ok 2\n";
 my %ov = (
 	  'foo' => 'bar',
 	  'bar' => 'foo',
+	  'zero' => 0,
+          'pluszero' => '+0',
+          'minuszero' => '-0',
 	  'five' => 5,
 	  'numbers' => [ 1, 2, 3 ],
 	  'recipe' => { fee => 'fi',

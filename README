@@ -1,4 +1,4 @@
-Text::BasicTemplate v2.003
+Text::BasicTemplate v2.005
 ----------------------------
 
 This is a template parsing module for perl5 and higher.  Originally
@@ -40,5 +40,5 @@ Copious documentation and examples provided within.
 
 Enjoy.
   Devin Carraway <cpan-textbasictemplate@nospam.devin.com>
-  Tue Sep 19 20:43:27 PDT 2000
+  Mon Apr  9 01:50:36 PDT 2001
 

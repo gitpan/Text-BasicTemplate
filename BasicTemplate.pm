@@ -11,7 +11,7 @@ require Exporter;
 require AutoLoader;
 
 use vars qw($VERSION);
-$VERSION = "2.004";
+$VERSION = "2.005";
 
 use Fcntl qw(:DEFAULT :flock);
 
@@ -1090,6 +1090,7 @@ sub cond_evaluate {
 
   # first recursively evaluate according to parentheses
 
+  $debug and print STDERR " [cond_evaluate(): $cond]";
   defined $cond or return undef;
 
   # have we computed this condition all the way before?
@@ -1118,11 +1119,11 @@ sub cond_evaluate {
       while ($cond =~ /(^| |\()\(([^\)]+)\)/) {
 	  ($psc,$subcond) = ($1,$2);
 	  $rcond = $self->cond_evaluate($subcond,$ovr);
-	  
-	  $debug and print STDERR " [eval $subcond -> $rcond]";
+	  $debug and print STDERR " [eval $subcond-> $rcond in $cond]";
 	  #      $cond =~ s/($&)/$rcond/g;
-	  $cond =~ s/\($subcond\)/$rcond/g;
-	  #      substr($cond,pos($cond)-(length($subcond)+2),length($subcond)+2) = $rcond;
+	  # fix in 2.005: Shouldn't have permitted active metachars here:
+	  $cond =~ s/\(\Q$subcond\E\)/$rcond/g;
+	  $debug and print STDERR " [reduced to $cond]";
       }
       $debug and print STDERR " [simplified cond: $cond]"; 
       
@@ -1134,7 +1135,7 @@ sub cond_evaluate {
 		 ==|!=|<=>|<=|>=|<|>| (eq|ne|lt|le|gt|ge) |   # comparison binary ops
 
 		 \=~|\!~| x |\.|\+|\-|\*\*|\*| (mod|div) |\/)?/gmx) { # arithmetic and string ops
-#	  $debug and print STDERR " [ conditional ($1,$2,$3,$4,$5,$6,$7,$8)]";
+	  $debug and print STDERR " [ conditional ($1,$2,$3,$4,$5,$6,$7,$8)]";
 	  
 	  my ($unaryop,$operand,$binaryop) = ($1,$2,$4);
 #          print STDERR " [unaryop=",($unaryop || 'undef'),", calling ident_eval($operand)]";
@@ -1154,8 +1155,8 @@ sub cond_evaluate {
 	  }
 	  $binaryop and $binop_leftover=$binaryop;
 	  
-#	  $debug and print STDERR "[unary=$unaryop operand=$operand binaryop=$binaryop lo=$binop_leftover, new cstack={".
-#	    $self->dump_stack(\@cstack,1)."} ]";
+	  $debug and print STDERR "[unary=$unaryop operand=$operand binaryop=$binaryop lo=$binop_leftover, new cstack={".
+	    $self->dump_stack(\@cstack,1)."} ]";
       }
       
       $binop_leftover and push @cstack, [ 5, $binop_leftover ];
