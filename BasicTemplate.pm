@@ -11,7 +11,7 @@ require Exporter;
 require AutoLoader;
 
 use vars qw($VERSION);
-$VERSION = "2.001";
+$VERSION = "2.002";
 
 use Fcntl qw(:DEFAULT :flock);
 
