@@ -54,21 +54,21 @@ print "ok 6\n";
 
 # hash, standard opts
 $ss = "%recipe%";
-print "not " unless $bt->parse(\$ss,\%ov) eq 'fee=fi, fo=fum, bones=bread';
+print "not " unless $bt->parse(\$ss,\%ov) =~ /((fee=fi|fo=fum|bones=bread)(, )?){3}/;
 print "ok 7\n";
 
 # hash, global delimiters
 $ss = "%recipe%";
 $bt->{hash_delimiter}->{__default} = '^';
 $bt->{hash_specifier}->{__default} = '!';
-print "not " unless $bt->parse(\$ss,\%ov) eq 'fee!fi^fo!fum^bones!bread';
+print "not " unless $bt->parse(\$ss,\%ov) =~ /((fee!fi|fo!fum|bones!bread)\^?){3}/;
 print "ok 8\n";
 
 # hash, specific delimiters
 $ss = "%recipe%";
 $bt->{hash_delimiter}->{__default} = '%';
 $bt->{hash_specifier}->{__default} = '&';
-print "not " unless $bt->parse(\$ss,\%ov) eq 'fee&fi%fo&fum%bones&bread';
+print "not " unless $bt->parse(\$ss,\%ov) =~ /((fee&fi|fo&fum|bones&bread)%?){3}/;
 print "ok 9\n";
 
 # 

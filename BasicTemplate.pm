@@ -11,7 +11,7 @@ require Exporter;
 require AutoLoader;
 
 use vars qw($VERSION);
-$VERSION = "2.003";
+$VERSION = "2.004";
 
 use Fcntl qw(:DEFAULT :flock);
 
@@ -2211,6 +2211,10 @@ sub convert_template_0x_2x {
 __END__
 
 =head1 HISTORY
+
+2.004: Fixed a dumb oversight in test suite where valid comparison
+strings assumed that the iteration order in a hash would be consistent
+and predictable.  Passes make-test under perl5.6 now.
 
 2.0: Major rewrite.  Introduced lexical parsing, nested conditionals,
 list/hash formatting, subroutine references, operator evaluation and

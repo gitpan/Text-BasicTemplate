@@ -25,8 +25,8 @@ my %ov = (
 my @templates = (
 		 [ 'foo=%foo%' => 'foo=bar' ],
 		 [ 'numbers=%numbers%' => 'numbers=1, 2, 3' ],
-		 [ 'recipe=%recipe%' => 'recipe=fee=fi, fo=fum, bones=bread' ],
 		 [ '%foo% %% %bar%' => 'bar % foo' ],
+		 [ 'recipe=%recipe%' => qr/recipe=((fee=fi|fo=fum|bones=bread)(, )?){3}/ ],
 		);
 
 
@@ -41,11 +41,13 @@ for (@templates) {
     print T1 $_->[0];
     close T1;
     $parsed = $bt->parse("/tmp/maketest-00simple-$$-$tn.tmpl",\%ov);
-    if ($parsed ne $_->[1]) {
-#	print STDERR "[$parsed] ne [$_->[1]]\n";
+    if ($parsed !~ /$_->[1]/) {
+	$ENV{DEBUG_VISIBLE} and
+	  print STDERR "[expected '$_->[1]', got '$parsed']\n";
 	print "not ";
     }
     print "ok ".($tn++)."\n";
+    unlink("/tmp/maketest-00simple-$$-$tn.tmpl");
 }
 
 my $ss = "%x% %y% %z%";
