@@ -1,3 +1,9 @@
+2.006.1: Actually documented changes in 2.006
+
+2.006: Disabled one of the taint tests (t/05-real.pl, test 13), since it
+breaks with perl 5.6.1 and I can't yet think of a good way to retain
+the functionality.
+
 2.005: Fixed an infinite-loop bug affecting the use of parenthesized
 conditionals involving comparisons on metachars.  Actually, I'm surprised
 this didn't show up earlier, since it should have broken all sorts of
