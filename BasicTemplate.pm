@@ -11,7 +11,7 @@ require Exporter;
 require AutoLoader;
 
 use vars qw($VERSION);
-$VERSION = "2.002";
+$VERSION = "2.003";
 
 use Fcntl qw(:DEFAULT :flock);
 
@@ -1786,7 +1786,6 @@ sub load_from_file {
     $self->{file_cache}{$fn} and return $self->{file_cache}{$fn};
     $fn =~ s/^[\+<>|]+//;
     $buf = '';
-    `echo .. $fn ..`;
     sysopen(TMPL,$fn,0) || do {
 	$debug and print STDERR "Text::BasicTemplate::load_from_file($fn): $!";
 	return undef;
